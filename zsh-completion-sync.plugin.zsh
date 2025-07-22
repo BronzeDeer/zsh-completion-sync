@@ -109,6 +109,12 @@ _completion_sync:zsh_autocomplete_compat_reload(){
     else
       # Since the named directory exists we can source the plugin again, which will put the precmd hook back in the array
       _completion_sync:debug_log ':completion-sync:compinit:compat:zsh-autocomplete' "compat: zsh-autocomplete: re-initializing zsh-autocomplete via 'source ~zsh-autocomplete/zsh-autocomplete.plugin.zsh'"
+
+      # Avoid ZAC removing the compdump file because autocd or similar has registered as `#compdef -command-`
+      if [[ -v _comps[-command-] && -v functions[_autocomplete__command] ]]; then
+        compdef _autocomplete__command -command-
+      fi
+
       source ~zsh-autocomplete/zsh-autocomplete.plugin.zsh
 
       precmd=${(M)precmd_functions:#.autocomplete*precmd}
