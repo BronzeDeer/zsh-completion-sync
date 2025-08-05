@@ -13,6 +13,30 @@ _completion_sync:delete_first_from_fpath(){
     _completion_sync:debug_log ':completion-sync:fpath:delete' "deleting '$1' from FPATH at index '$idx'"
     fpath[$idx]=()
   fi
+
+  # Used for optmiziation that skips compinit if no compdef was removed
+  completion_sync_fpath_shrunk=true
+}
+
+_completion_sync:fpath_add_entry(){
+  _completion_sync:debug_log ':completion-sync:fpath:add' "Added '$p' to FPATH"
+  fpath=("$1" $fpath)
+
+  # Experimental, manually detect all relevant compdef functions and only add new ones
+  if _completion_sync:fast_add_isenabled; then
+    for f in $1/_*(N); do
+      basename=$f:t
+      if read -r first second<$f && [[ "$first" == "#compdef" && -n "$second" ]]; then
+        # If the function has already been autoloaded by something lower on the fpath we need to unload it and markt it for autoloading again to use the correct version
+        if functions $basename > /dev/null; then
+          unfunction $basename
+        fi
+        autoload $basename
+        compdef $basename $second
+        _completion_sync:debug_log ':completion-sync:compinit:experimental:fast-add:add' "manually added compdef for \"$second\" from $basename ($f)"
+      fi
+    done
+  fi
 }
 
 _completion_sync:fpath_maybe_add_xdg(){
@@ -24,14 +48,14 @@ _completion_sync:fpath_maybe_add_xdg(){
 
   if [[ -d $p ]]; then
     _completion_sync:debug_log ':completion-sync:xdg:add' "Added '$p' to FPATH"
-    fpath=("$p" $fpath)
+    _completion_sync:fpath_add_entry "$p"
   fi
 
 
   p="$1/zsh/site-functions"
   if [[ -d $p ]]; then
     _completion_sync:debug_log ':completion-sync:xdg:add' "Added '$p' to FPATH"
-    fpath=("$p" $fpath)
+    _completion_sync:fpath_add_entry "$p"
   fi
 }
 
@@ -68,6 +92,11 @@ _completion_sync:find_fpaths_from_path(){
   completion_sync_fpaths_from_path=(${(u)completion_sync_fpaths_from_path[@]})
   _completion_sync:debug_log ':completion-sync:path:path2fpath:unique' "fpaths on path (unique):\n${(F)completion_sync_fpaths_from_path}\n"
 
+}
+
+_completion_sync:fast_add_isenabled(){
+  zstyle -t ':completion-sync:compinit:experimental:fast-add' enabled
+  return
 }
 
 _completion_sync:custom_compinit_isenabled(){
@@ -149,6 +178,12 @@ _completion_sync:run_hook_if_enabled(){
 }
 
 _completion_sync:compsys_reload(){
+
+  if [[ ! $completion_sync_fpath_shrunk ]] && _completion_sync:fast_add_isenabled; then
+    _completion_sync:debug_log ':completion-sync:compinit:experimental:fast-add:skip' "skipping reload since no path was removed"
+    return 0;
+  fi
+
   # Delete current cache
   rm -rf "$_per_shell_compdump"
 
@@ -195,6 +230,9 @@ _completion_sync:compsys_reload(){
 
   _completion_sync:run_hook_if_enabled ':completion-sync:compinit:custom:post-hook'
 
+  # Reset tracking of the removed fpaths
+  completion_sync_fpath_shrunk=false
+
 }
 
 _completion_sync:path_hook(){
@@ -213,7 +251,7 @@ _completion_sync:path_hook(){
 
         _completion_sync:debug_log ':completion-sync:path:init:diff' "from path: $elem"
 
-        fpath=($elem $fpath)
+        _completion_sync:fpath_add_entry $p_path
         completion_sync_fpath_changed_during_init=true
       fi
     done
@@ -239,8 +277,7 @@ _completion_sync:path_hook(){
             # path got added
             local p_path="${p:2}"
             _completion_sync:debug_log ':completion-sync:path:onchange:add' "Adding path '$p_path'"
-            _completion_sync:debug_log ':completion-sync:fpath:add' "Adding '$p_path' to FPATH"
-            fpath=("$p_path" $fpath)
+            _completion_sync:fpath_add_entry $p_path
             ;;
           \>)
             # path got removed
@@ -286,7 +323,7 @@ _completion_sync:hook(){
 
           _completion_sync:debug_log ':completion-sync:xdg:init:diff' $elem
 
-          fpath=($elem $fpath)
+          _completion_sync:fpath_add_entry $elem
           completion_sync_fpath_changed_during_init=true
         fi
       done
@@ -312,8 +349,7 @@ _completion_sync:hook(){
               # path got added
               local p_path="${p:2}"
               _completion_sync:debug_log ':completion-sync:xdg:onchange:add' "Adding path '$p_path'"
-              _completion_sync:debug_log ':completion-sync:fpath:add' "Adding '$p_path' to FPATH"
-              fpath=("$p_path" $fpath)
+              _completion_sync:fpath_add_entry $p_path
               ;;
             \>)
               # path got removed

@@ -145,3 +145,18 @@ Examples:
   zstyle ':completion-sync:**:candidate:*' debug false
 ```
 You can control the debug logging very precisely if you need to, but for most use cases the options above are sufficient. If you need more precision, search for `:completion-sync:` in the source.
+
+
+### Experimental Optimizations
+
+#### fast-add
+
+When adding entries to the (front of) the FPATH, we can optimize the performance of the plugin by skipping a full reload of the compinit system and only manually adding in any `compdef` and `autoload` calls that a related to the added entries on the FPATH. This is should still lead to the exact same state, since adding completion definitions to the front of the fpath will mean that they become the preferred function definition for said completion. When removing entries from the FPATH, a full reload is still required.
+
+Overall, the optimization is crude because it can lead to a lot of independent `compdef` calls, therefore it is still considered experimental for now.
+
+To enable this optimization, use
+
+```zsh
+zstyle ':completion-sync:compinit:experimental:fast-add' enabled true
+```
