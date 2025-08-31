@@ -169,3 +169,13 @@ To enable this optimization, use
 ```zsh
 zstyle ':completion-sync:compinit:experimental:fast-add' enabled true
 ```
+
+#### no-caching
+
+zsh's compinit caching is very limited, it implicitly assumes that the set of completions changes very infrequently and not during the lifetime of a shell (basically whenever a user installs packages or changes their `.zshrc`). Therefore caching only works if the compdump file is an exact match for the rarely changing fpath. Inside of the circumstances where this plugin is typically used, this will mostly lead to unnecessary churn due to almost constant cache-misses. This option sets the compdump location (`$_comp_dumpfile` and similar variables) to `/dev/null`, and adding `-D -C` to the [compinit arguments](#compinit-arguments), forcing instant cache misses without extraneous checks, and disables constructing a useless compdump file
+
+To enable this optimization, use
+
+```zsh
+zstyle ':completion-sync:compinit:experimental:no-caching' enabled true
+```

@@ -99,6 +99,11 @@ _completion_sync:fast_add_isenabled(){
   return
 }
 
+_completion_sync:no_caching_isenabled(){
+  zstyle -t ':completion-sync:compinit:experimental:no-caching' enabled
+  return
+}
+
 _completion_sync:custom_compinit_isenabled(){
   zstyle -t ':completion-sync:compinit:custom' enabled
   return
@@ -189,8 +194,8 @@ _completion_sync:compsys_reload(){
     return 0;
   fi
 
-  # Delete current cache
-  rm -rf "$_per_shell_compdump"
+  # Delete current cache unless caching is fully disabled
+  _completion_sync:no_caching_isenabled || rm -rf "$_per_shell_compdump"
 
   _completion_sync:run_hook_if_enabled ':completion-sync:compinit:custom:pre-hook'
 
@@ -401,10 +406,26 @@ _completion_sync:hook(){
   completion_sync_old_fpath=( "${(@f)fpath}" )
 }
 
-local compDumpDir="${TMPDIR:-/tmp}/per-shell-zcompdumps"
-mkdir -p $compDumpDir
-# Create a specific zcompdump for this pid. This allows us to use a zcompdump per shell and identify it later if desired
-_per_shell_compdump="$compDumpDir/$$.zcompdump"
+## zcompdump manipulation
+
+# Priority order of potential compdump files taken from zsh-autocomplete
+local _original_compdump=${_comp_dumpfile:-${ZSH_COMPDUMP:-${XDG_CACHE_HOME:-$HOME/.cache}/zsh/compdump}}
+
+local _per_shell_compdump=""
+if _completion_sync:no_caching_isenabled; then
+  _per_shell_compdump="/dev/null"
+
+  local -a args
+  zstyle -a ':completion-sync:compinit' arguments args
+  # Disable cache write-back (-D) and cache testing (-C)
+  args+=(-D -C)
+  zstyle ':completion-sync:compinit' arguments "$args[*]"
+else
+  local compDumpDir="${TMPDIR:-/tmp}/per-shell-zcompdumps"
+  mkdir -p $compDumpDir
+  # Create a specific zcompdump for this pid. This allows us to use a zcompdump per shell and identify it later if desired
+  _per_shell_compdump="$compDumpDir/$$.zcompdump"
+fi
 # Set the relevant env vars for compdump location, various plugins/mechanisms will create the compdump there
 ZSH_COMPDUMP="$_per_shell_compdump"
 _comp_dumpfile="$_per_shell_compdump"
