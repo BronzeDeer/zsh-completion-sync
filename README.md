@@ -179,3 +179,18 @@ To enable this optimization, use
 ```zsh
 zstyle ':completion-sync:compinit:experimental:no-caching' enabled true
 ```
+
+
+#### copy-compdump
+
+By default, this plugin uses a separate, initially empty zcompdump file per shell to avoid temporary shell environments polluting the user-global compdump file. With the experimental "copy-compdump" option, each shell will start out with a copy of the user-global compdump file and the plugin will attempt to maintain an up-to-date user-global compdump file by copying the cache dump back to the user-global spot when run inside a login shell (since a login shell should never start out in a temporary shell environment).
+
+Given the limitations of zsh's caching system it is unclear if there are many usecases where this optimization will help much. Most use-cases will be sped up more by using [no-caching](#no-caching).
+
+Disabled if [no-caching](#no-caching) is enabled
+
+To enable this optimization, use
+
+```zsh
+zstyle ':completion-sync:compinit:experimental:copy-compdump' enabled true
+```
