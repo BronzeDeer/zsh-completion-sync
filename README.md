@@ -99,6 +99,15 @@ zstyle ':completion-sync:compinit:custom' enabled true
 zstyle ':completion-sync:compinit:custom' command 'this string will be eval'ed'
 ```
 
+### Compinit arguments
+
+When using zsh-autocomplete, default or builtin `compinit`, you can use `zstyle ':completion-sync:compinit' arguments` to set an argument of arguments to use when invoking compinit. Note that `-d /path/to/compdump` is managed outside of this zstyle and should not be set inside arguments
+
+Example: This will disable compdumping, and fpath testing for existing compdump files, both of which are expensive processes
+```zsh
+zstyle ':completion-sync:compinit' arguments -D -C
+```
+
 ### `zsh-autocomplete` Compatibility
 
 The plugin `zsh-autocomplete` (ZAC) customizes the behaviour of zsh's compsys to an extreme degree. it does this so much, that any calls to the builtin `compinit` will break the plugin in subtle to overt ways. As a protection, the plugin disables `compinit` completely after it has loaded (see [Builtin Compinit](#builtin-compinit) for details). This leaves us without a good option on how to reload our completions system. While [forcing use of the builtin compinit function](#builtin-compinit) allows reloading, this will lead to aforementioned breakage. Instead, we can make use of the fact, that [zsh-autocomplete initialization is idempotent](https://github.com/marlonrichert/zsh-autocomplete/issues/283#issuecomment-902850335) and source the complete plugin again to ensure that zsh-autocomplete re-initializes on the current FPATH

@@ -144,6 +144,11 @@ _completion_sync:zsh_autocomplete_compat_reload(){
         compdef _autocomplete__command -command-
       fi
 
+      # Copy compinit arguments
+      local -a args
+      zstyle -a ':completion-sync:compinit' arguments args
+      zstyle ':autocomplete::compinit' arguments "$args[@]"
+
       source ~zsh-autocomplete/zsh-autocomplete.plugin.zsh
 
       precmd=${(M)precmd_functions:#.autocomplete*precmd}
@@ -217,8 +222,12 @@ _completion_sync:compsys_reload(){
       _completion_sync:debug_log ':completion-sync:compinit:builtin-compinit' "loaded compinit: $(whence -v compinit)"
     fi
 
-    _completion_sync:debug_log ':completion-sync:compinit' "invoking compinit as 'compinit -d \"$_per_shell_compdump\"'"
-    compinit -d "$_per_shell_compdump"
+    # Copy compinit arguments
+    local -a args
+    zstyle -a ':completion-sync:compinit' arguments args
+
+    _completion_sync:debug_log ':completion-sync:compinit' "invoking compinit as 'compinit -d \"$_per_shell_compdump\" $args[*]'"
+    compinit -d "$_per_shell_compdump" "$args[@]"
 
     if zstyle -t ':completion-sync:compinit:builtin-compinit' enabled; then
       # restore original function
