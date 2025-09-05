@@ -255,7 +255,7 @@ _completion_sync:compsys_reload(){
   _completion_sync:run_hook_if_enabled ':completion-sync:compinit:custom:post-hook'
 
   # Reset tracking of the removed fpaths
-  completion_sync_fpath_shrunk=false
+  completion_sync_fpath_shrunk=""
 
 }
 
