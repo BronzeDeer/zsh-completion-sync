@@ -194,3 +194,20 @@ To enable this optimization, use
 ```zsh
 zstyle ':completion-sync:compinit:experimental:copy-compdump' enabled true
 ```
+#### frozen-first-cache
+
+(only relevant if [no-caching](#no-caching) is also enabled).
+
+Modifies the logic of [no-caching](#no-caching), so that the compdump file path is not set to `/dev/null` until just before this plugin's `precmd` hook runs for the first time. This allows for an optimization in which the first compinit call (which should always lead to the same state of the compsys unless `.zshrc` changed) is loaded from cache for a faster startup. Afterwards, behaves exactly like `no-caching` (i.e. forces full reloads to traverse the `$FPATH` without caching).
+
+Note that when using this option, you need to handle cache-invalidation yourself, otherwise your completions might be incomplete or broken on shell start.
+
+Most use cases will not need this option and can simply ensure that `zsh-completion-sync` is initialized after the synchronous call to `compinit [-C -D] -d /path/to/compdump`, however when using [zsh-autocomplete](https://github.com/marlonrichert/zsh-autocomplete/), you should not call compinit directly, but let ZAC call it in its initialization hook. With [no-caching](#no-caching), the compdump path will then already have been set to `/dev/null`, negating the benefit of having a properly maintained cache file for startup.
+
+TL;DR: If you use a plugin which runs `compinit` late in a `precmd` hook (like [zsh-autocomplete](https://github.com/marlonrichert/zsh-autocomplete/)), use this option, and make sure this plugin is initialized after the `compinit` calling plugin
+
+To enable this optimization, use
+
+```zsh
+zstyle ':completion-sync:compinit:experimental:frozen-first-cache' enabled true
+```

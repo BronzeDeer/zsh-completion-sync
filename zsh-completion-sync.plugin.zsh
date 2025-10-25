@@ -114,6 +114,11 @@ _completion_sync:no_caching_isenabled(){
   return
 }
 
+_completion_sync:frozen_first_cache_isenabled(){
+  zstyle -t ':completion-sync:compinit:experimental:frozen-first-cache' enabled
+  return
+}
+
 _completion_sync:custom_compinit_isenabled(){
   zstyle -t ':completion-sync:compinit:custom' enabled
   return
@@ -128,6 +133,16 @@ _completion_sync:zsh_autocomplete_compat_isenabled(){
   else
     return 1
   fi
+}
+
+_completion_sync:disable_compdump(){
+  _per_shell_compdump="/dev/null"
+  ZSH_COMPDUMP="$_per_shell_compdump"
+  _comp_dumpfile="$_per_shell_compdump"
+
+  _completion_sync:debug_log ':completion-sync:compinit:compdump' "set compdump path to '/dev/null' to non-cached reloads"
+  # If this was called as a hook, it should only execute once
+  add-zsh-hook -d precmd "${0}"
 }
 
 _completion_sync:zsh_autocomplete_compat_disable(){
@@ -440,7 +455,14 @@ local _original_compdump=${_comp_dumpfile:-${ZSH_COMPDUMP:-${XDG_CACHE_HOME:-$HO
 
 local _per_shell_compdump=""
 if _completion_sync:no_caching_isenabled; then
-  _per_shell_compdump="/dev/null"
+  if _completion_sync:frozen_first_cache_isenabled; then
+    # Ensure that zac or other delayed compinit hooks can load from the frozen cache once
+    _per_shell_compdump="$_original_compdump"
+    _completion_sync:debug_log ':completion-sync:compinit:experimental:frozen-first-cache' "leaving compdump path as ${_original_compdump} once"
+    add-zsh-hook precmd _completion_sync:disable_compdump
+  else
+    _per_shell_compdump="/dev/null"
+  fi
 
   local -a args
   zstyle -a ':completion-sync:compinit' arguments args
