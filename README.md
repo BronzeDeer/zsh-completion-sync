@@ -151,32 +151,34 @@ Examples:
 You can control the debug logging very precisely if you need to, but for most use cases the options above are sufficient. If you need more precision, search for `:completion-sync:` in the source.
 
 
-### Experimental Optimizations
+### Optimizations
+
+Zsh's completion system is necessarily opiniated because it was designed and built in a very different time, including where installed packages/binaries didn't change quickly and cpu time was sparse compared to today. Design decisions (especially around caching) made sense then, but are standing in the way of performant dynamic updates to the completion system. To regain some performance this plugin uses a few optimizations. These are:
 
 #### fast-add
 
-When adding entries to the (front of) the FPATH, we can optimize the performance of the plugin by skipping a full reload of the compinit system and only manually adding in any `compdef` and `autoload` calls that a related to the added entries on the FPATH. This is should still lead to the exact same state, since adding completion definitions to the front of the fpath will mean that they become the preferred function definition for said completion. When removing entries from the FPATH, a full reload is still required.
+When adding entries to the (front of) the FPATH, we can optimize the performance of the plugin by skipping a full reload of the compinit system and only manually adding in any `compdef` and `autoload` calls that a related to the added entries on the FPATH. This should still lead to the exact same state, since adding completion definitions to the front of the fpath will mean that they become the preferred function definition for said completion. When removing entries from the FPATH, a full reload is still required.
 
 Overall, the optimization is crude because it can lead to a lot of independent `compdef` calls, therefore it is still considered experimental for now.
 
-To enable this optimization, use
+This optimization has graduated from expiremntal and is enabled by default, to *disable* this optimization, use
 
 ```zsh
-zstyle ':completion-sync:compinit:experimental:fast-add' enabled true
+zstyle ':completion-sync:compinit:optimizations:fast-add' enabled false
 ```
 
 #### no-caching
 
-zsh's compinit caching is very limited, it implicitly assumes that the set of completions changes very infrequently and not during the lifetime of a shell (basically whenever a user installs packages or changes their `.zshrc`). Therefore caching only works if the compdump file is an exact match for the rarely changing fpath. Inside of the circumstances where this plugin is typically used, this will mostly lead to unnecessary churn due to almost constant cache-misses. This option sets the compdump location (`$_comp_dumpfile` and similar variables) to `/dev/null`, and adding `-D -C` to the [compinit arguments](#compinit-arguments), forcing instant cache misses without extraneous checks, and disables constructing a useless compdump file
+zsh's compinit caching is very limited, it implicitly assumes that the set of completions changes very infrequently and not during the lifetime of a shell (basically whenever a user installs packages or changes their `.zshrc`). Therefore caching only works if the compdump file is an exact match for the rarely changing fpath. Inside of the circumstances where this plugin is typically used, this will mostly lead to unnecessary churn due to almost constant cache-misses. This option sets the compdump location (`$_comp_dumpfile` and similar variables) to `/dev/null`, and adds `-D -C` to the [compinit arguments](#compinit-arguments), forcing instant cache misses without extraneous checks, and disables constructing a useless compdump file
 
-To enable this optimization, use
+This optimization has graduated from expiremntal and is enabled by default, to *disable* this optimization, use
 
 ```zsh
-zstyle ':completion-sync:compinit:experimental:no-caching' enabled true
+zstyle ':completion-sync:compinit:optimizations:no-caching' enabled false
 ```
 
 
-#### copy-compdump
+#### copy-compdump (experimental)
 
 By default, this plugin uses a separate, initially empty zcompdump file per shell to avoid temporary shell environments polluting the user-global compdump file. With the experimental "copy-compdump" option, each shell will start out with a copy of the user-global compdump file and the plugin will attempt to maintain an up-to-date user-global compdump file by copying the cache dump back to the user-global spot when run inside a login shell (since a login shell should never start out in a temporary shell environment).
 
@@ -189,7 +191,7 @@ To enable this optimization, use
 ```zsh
 zstyle ':completion-sync:compinit:experimental:copy-compdump' enabled true
 ```
-#### frozen-first-cache
+#### frozen-first-cache (experimental)
 
 (only relevant if [no-caching](#no-caching) is also enabled).
 

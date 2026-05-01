@@ -105,12 +105,39 @@ _completion_sync:copy_compdump_isenabled(){
 }
 
 _completion_sync:fast_add_isenabled(){
-  zstyle -t ':completion-sync:compinit:experimental:fast-add' enabled
+
+  zstyle -t ':completion-sync:compinit:optimizations:fast-add' enabled
+  if [ $? != 0 ] && [[ ! -v ZCS_DEPRECATION_WARNING_FAST_ADD ]] ; then
+    # Test if the style is actually unset and not set to something false
+    # And test if the experimental version of the flag is set
+    if zstyle -T ':completion-sync:compinit:optimizations:fast-add' enabled && zstyle -t ':completion-sync:compinit:experimental:fast-add' enabled; then
+      echo "completion-sync: Deprecation: zstyle ':completion-sync:compinit:experimental:fast-add' enabled true"
+      echo "\tthe "fast-add" optmization has graduated to stable and is now enabled by default. Either remove your references the experimental zstyle or set \"zstyle ':completion-sync:compinit:optimizations:fast-add' enabled\" to a truthy value explicitly"
+
+      ZCS_DEPRECATION_WARNING_FAST_ADD=1
+      return 0
+    fi
+  fi
+
+
+  zstyle -T ':completion-sync:compinit:optimizations:fast-add' enabled
   return
 }
 
 _completion_sync:no_caching_isenabled(){
-  zstyle -t ':completion-sync:compinit:experimental:no-caching' enabled
+  zstyle -t ':completion-sync:compinit:optimizations:no-caching' enabled
+  if [ $? != 0 ] && [[ ! -v ZCS_DEPRECATION_WARNING_NO_CACHING ]] ; then
+    # Test if the style is actually unset and not set to something false
+    # And test if the experimental version of the flag is set
+    if zstyle -T ':completion-sync:compinit:optimizations:no-caching' enabled && zstyle -t ':completion-sync:compinit:experimental:no-caching' enabled; then
+      echo "completion-sync: Deprecation: zstyle ':completion-sync:compinit:experimental:no-caching' enabled true"
+      echo "\tthe "no-caching" optmization has graduated to stable and is now enabled by default. Either remove your references the experimental zstyle or set \"zstyle ':completion-sync:compinit:optimizations:no-caching' enabled\" to a truthy value explicitly"
+
+      ZCS_DEPRECATION_WARNING_NO_CACHING=1
+      return 0
+    fi
+  fi
+  zstyle -T ':completion-sync:compinit:optimizations:no-caching' enabled
   return
 }
 
