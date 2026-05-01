@@ -180,7 +180,7 @@ _completion_sync:zsh_autocomplete_compat_reload(){
       zstyle ':autocomplete::compinit' arguments "$args[@]"
 
       # Reset zacs internal config store variable to prompt always calling builtin compinit
-      echo "zcs: unsetting _comp_setup"
+      _completion_sync:debug_log ':completion-sync:compinit:compat:zsh-autocomplete' "compat: zsh-autocomplete: unsetting _comp_setup to force re-init in zsh-autocomplete"
       unset _comp_setup
 
       source ~zsh-autocomplete/zsh-autocomplete.plugin.zsh
