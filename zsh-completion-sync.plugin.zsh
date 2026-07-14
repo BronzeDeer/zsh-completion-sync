@@ -60,9 +60,12 @@ _completion_sync:fpath_maybe_add_xdg(){
 }
 
 _completion_sync:functions_from_xdg_data(){
-  local a=($(echo "$XDG_DATA_DIRS" | tr ':' "\n" | xargs -I{} realpath -e "{}/zsh/site-functions" "\n" realpath -e "{}/zsh/$ZSH_VERSION/functions" "\n" realpath -e "{}/zsh/vendor-completions" 2>/dev/null | tr "\n" ' '))
-  # unique the directories
-  echo "${(u)a[@]}"
+  local paths=(zsh/site-functions zsh/$ZSH_VERSION/functions zsh/vendor-completions)
+  local candidates=(${(s[:])^XDG_DATA_DIRS}/${^paths})
+  # The ":A" modifier turns each entry into an absolute path and then calls
+  # realpath(3) to resolve symlinks. Then the "(u)" modifier discards duplicate
+  # entries and the "(-/N)" glob pattern discards directories that don't exist.
+  echo ${(u)^candidates:A}(-/N)
 }
 
 # This function directly reads into the completion_sync_fpaths_from_path variable to avoid a subshell invocation
