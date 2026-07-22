@@ -251,7 +251,7 @@ _completion_sync:compsys_reload(){
   fi
 
   # Delete current cache, unless the compdump handling optimization is enabled or caching is fully disabled
-  _completion_sync:copy_compdump_isenabled  || _completion_sync:no_caching_isenabled || rm -rf "$_per_shell_compdump"
+  _completion_sync:copy_compdump_isenabled  || _completion_sync:no_caching_isenabled || command rm -rf "$_per_shell_compdump"
 
   _completion_sync:run_hook_if_enabled ':completion-sync:compinit:custom:pre-hook'
 
@@ -311,7 +311,7 @@ _completion_sync:compdump_writeback_hook(){
     # Run background job which updates the compdump and then writes it back to the user global compdump
     # It runs in the background to not block the shell startup
     _completion_sync:debug_log ':completion-sync:compinit:experimental:copy-compdump' "This is a login shell, writing back to user global zcompdump at '$_original_compdump'"
-    { compdump 2>&1 >> "${_per_shell_compdump}-writeback.log" && cp $_per_shell_compdump $_original_compdump  2>&1 >> "${_per_shell_compdump}-writeback.log"; } &|
+    { compdump 2>&1 >> "${_per_shell_compdump}-writeback.log" && command cp $_per_shell_compdump $_original_compdump  2>&1 >> "${_per_shell_compdump}-writeback.log"; } &|
   fi
 
   # Remove this hook after initial run
@@ -348,7 +348,7 @@ _completion_sync:path_hook(){
     if [[ "$completion_sync_old_fpaths_from_path" != "$completion_sync_fpaths_from_path" ]]; then
       _completion_sync:debug_log ':completion-sync:path:onchange' "Need to update FPATH from PATH!"
 
-      local diff=( "${(@)$(diff <(echo "${(F)completion_sync_fpaths_from_path}") <( echo "${(F)completion_sync_old_fpaths_from_path}") | grep -E "<|>")}" )
+      local diff=( "${(@)$(command diff <(echo "${(F)completion_sync_fpaths_from_path}") <( echo "${(F)completion_sync_old_fpaths_from_path}") | command grep -E "<|>")}" )
       _completion_sync:debug_log ':completion-sync:path:diff' "$diff"
 
       # TODO: Generalize without subshell
@@ -421,7 +421,7 @@ _completion_sync:hook(){
       if [[ "$completion_sync_old_xdg_fpaths" != "$new_paths" ]]; then
         _completion_sync:debug_log ':completion-sync:xdg:onchange' "Need to update FPATH from XDG_DATA_DIRS!"
 
-        local diff=( "${(f)$(diff <(echo "${(F)new_paths}") <( echo "${(F)completion_sync_old_xdg_fpaths}") | grep -E "<|>")}" )
+        local diff=( "${(f)$(command diff <(echo "${(F)new_paths}") <( echo "${(F)completion_sync_old_xdg_fpaths}") | command grep -E "<|>")}" )
         _completion_sync:debug_log ':completion-sync:xdg:diff' "$diff"
 
         # Prepend in reverse order to maintain their order in the final path
@@ -467,7 +467,7 @@ _completion_sync:hook(){
 
     _completion_sync:debug_log ':completion-sync:fpath:onchange' "FPATH Changed!"
     if zstyle -t ':completion-sync:fpath:onchange:diff' debug; then
-      diff <(echo "${(F)fpath}" | sort ) <(echo "${(F)completion_sync_old_fpath}" | sort) | grep -E "<|>"
+      command diff <(echo "${(F)fpath}" | sort ) <(echo "${(F)completion_sync_old_fpath}" | sort) | command grep -E "<|>"
     fi
 
     _completion_sync:compsys_reload
@@ -511,7 +511,7 @@ if _completion_sync:copy_compdump_isenabled; then
   # TODO: Is there even any use to this, given that zsh caching is all or nothing?
   if [[ -r "$_original_compdump" ]] && [[ "$_per_shell_compdump" != "$_original_compdump" ]]; then
     _completion_sync:debug_log ':completion-sync:compinit:experimental:copy-compdump' "Using existing zcompdump ($_original_compdump) as basis for shell specific (PID: $$) zcompdump"
-    cp $_original_compdump $_per_shell_compdump
+    command cp $_original_compdump $_per_shell_compdump
   fi
 
   # Check if user-global compdump is writeable or could be created
